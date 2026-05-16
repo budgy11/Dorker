@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+from invisible_playwright import InvisiblePlaywright
+import argparse
+
+
+def google_search(query: str, max_results: int = 10) -> list[str]:
+    with InvisiblePlaywright() as browser:
+        page = browser.new_page()
+        page.goto("https://www.google.com/", wait_until="domcontentloaded")
+
+        try:
+            page.get_by_role("button", name="Accept all").click(timeout=3000)
+        except Exception:
+            pass
+
+        search_box = page.locator('textarea[name="q"], input[name="q"]').first
+        search_box.fill(query)
+        search_box.press("Enter")
+
+        page.wait_for_function(
+            "document.querySelector('div#search a h3') !== null",
+            timeout=15000,
+        )
+
+        anchors = page.locator("div#search a:has(h3)")
+        count = anchors.count()
+
+        urls: list[str] = []
+        for i in range(count):
+            href = anchors.nth(i).get_attribute("href")
+            if href and href.startswith("http") and href not in urls:
+                urls.append(href)
+            if len(urls) >= max_results:
+                break
+
+        return urls
+
+
+if __name__ == "__main__":
+    results = google_search('How to tie a tie', max_results=20)
+    print(f"Found {len(results)} results:")
+    for i, url in enumerate(results, 1):
+        print(f"{i}. {url}")
