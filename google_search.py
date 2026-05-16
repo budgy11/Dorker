@@ -28,8 +28,9 @@ def google_search(
                     pass
 
             try:
+                page.wait_for_load_state("load", timeout=15000)
                 page.wait_for_function(
-                    "document.querySelector('div#search a h3') !== null",
+                    "document.readyState === 'complete' && document.querySelector('div#search a h3') !== null",
                     timeout=15000,
                 )
             except Exception:
